@@ -1,8 +1,9 @@
-import 'dart:html';
+import 'dart:convert';
 
 import 'package:demo_app/login.dart';
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
+import 'package:http/http.dart' as http;
 
 class Registration extends StatefulWidget {
   const Registration({super.key});
@@ -12,6 +13,35 @@ class Registration extends StatefulWidget {
 }
 
 class _RegistrationState extends State<Registration> {
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  bool _isNotValidate = false;
+
+  Future<void> registerUser() async {
+    if(emailController.text.isNotEmpty && passwordController.text.isNotEmpty){
+      var reqBody = {
+        "email" : emailController.text,
+        "password" : passwordController.text
+      };
+
+      var response = await http.post(
+        Uri.parse('http://172.24.153.83:3000/register'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(reqBody));
+      var jsonResponse = jsonDecode(response.body);
+      if(jsonResponse['status']) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage(),),);
+      } else {
+        print('Something went wrong!');
+      }
+    }
+    else{
+      setState(() {
+        _isNotValidate = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -43,11 +73,13 @@ class _RegistrationState extends State<Registration> {
                     height: 10,
                     ),
                   TextField(
+                    controller: emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.white,
                       hintText: "Email",
+                      errorText: _isNotValidate ? "Enter fill out" : null,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(
                           Radius.circular(10.0),
@@ -59,6 +91,7 @@ class _RegistrationState extends State<Registration> {
                     height: 5,
                     ),
                   TextField(
+                    controller: passwordController,
                     keyboardType: TextInputType.text,
                     obscureText: true,
                     decoration: InputDecoration(
@@ -73,6 +106,7 @@ class _RegistrationState extends State<Registration> {
                       filled: true,
                       fillColor: Colors.white,
                       hintText: "Password",
+                      errorText: _isNotValidate ? "Please check your password" : null,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(
                           Radius.circular(10.0),
@@ -84,7 +118,9 @@ class _RegistrationState extends State<Registration> {
                     height: 5,
                     ),
                   GestureDetector(
-                    onTap: () {},
+                    onTap: () {
+                      registerUser();
+                    },
                     child: HStack([
                       VxBox(
                         child: "Register".text.makeCentered().p16(),
